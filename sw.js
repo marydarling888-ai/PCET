@@ -3,12 +3,9 @@ const ASSETS = [
   './',
   './index.html',
   './manifest.json',
+  './privacy.html',
   './icons/icon-192.png',
-  './icons/icon-512.png',
-  './icons/icon-512-maskable.png',
-  './screenshots/desktop-home.png',
-  './screenshots/mobile-home.png',
-  './privacy.html'
+  './icons/icon-512.png'
 ];
 
 self.addEventListener('install', function(event){
@@ -35,7 +32,7 @@ self.addEventListener('fetch', function(event){
         var copy = resp.clone();
         caches.open(CACHE_NAME).then(function(cache){ cache.put(event.request, copy); });
         return resp;
-      }).catch(function(){ return cached; });
+      }).catch(function(){ return caches.match('./index.html'); });
     })
   );
 });

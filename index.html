@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PCET - Patient Cost Estimator Tool</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0A0A12">
@@ -83,36 +83,7 @@
     font-size:.78rem; color:var(--text-dim); line-height:1.65; }
   .how-panel div{ padding:2px 0; }
 
-  /* ---- future-developments animated reel ---- */
-  .future-reel{ position:relative; height:190px; border-radius:16px; overflow:hidden;
-    background:var(--surface2); border:1px solid var(--line-soft); margin-top:4px; }
-  .future-reel::before{ content:''; position:absolute; width:160px; height:160px; border-radius:50%;
-    background:var(--grad); opacity:.22; filter:blur(40px); top:-60px; right:-50px; pointer-events:none; }
-  .future-frame{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center;
-    justify-content:center; text-align:center; padding:22px; opacity:0; animation:reelCycle 16s infinite; }
-  .future-frame .ic{ font-size:1.9rem; margin-bottom:10px; }
-  .future-frame h4{ font-family:var(--font-display); font-size:1rem; font-weight:700; margin-bottom:6px; position:relative; }
-  .future-frame p{ font-size:.8rem; color:var(--text-dim); max-width:30ch; line-height:1.55; position:relative; }
-  .future-frame:nth-child(1){ animation-delay:0s; }
-  .future-frame:nth-child(2){ animation-delay:4s; }
-  .future-frame:nth-child(3){ animation-delay:8s; }
-  .future-frame:nth-child(4){ animation-delay:12s; }
-  @keyframes reelCycle{ 0%{opacity:0;} 3%{opacity:1;} 22%{opacity:1;} 25%{opacity:0;} 100%{opacity:0;} }
-  .future-dots{ display:flex; gap:6px; justify-content:center; margin-top:10px; }
-  .future-dots span{ width:6px; height:6px; border-radius:50%; background:var(--line); animation:dotPulse 16s infinite; }
-  .future-dots span:nth-child(1){ animation-delay:0s; }
-  .future-dots span:nth-child(2){ animation-delay:4s; }
-  .future-dots span:nth-child(3){ animation-delay:8s; }
-  .future-dots span:nth-child(4){ animation-delay:12s; }
-  @keyframes dotPulse{ 0%{background:var(--line);} 3%{background:var(--violet);} 22%{background:var(--violet);} 25%{background:var(--line);} 100%{background:var(--line);} }
-  @media (prefers-reduced-motion:reduce){
-    .future-frame{ animation:none; opacity:0; }
-    .future-frame:nth-child(1){ opacity:1; }
-    .future-dots span{ animation:none; }
-    .future-dots span:nth-child(1){ background:var(--violet); }
-  }
-
-  /* ---- chips ---- */
+    /* ---- chips ---- */
   .chip{ display:inline-flex; align-items:center; padding:4px 10px; border-radius:20px; font-size:.72rem;
     font-weight:600; background:var(--surface2); color:var(--text-dim); border:1px solid var(--line-soft); }
   .chip.light{ background:rgba(255,255,255,.08); color:var(--text); }
@@ -332,21 +303,7 @@
     <div class="card">
       <h2 class="section">About</h2>
       <p class="small-note">PCET (Patient Cost Estimator Tool) — store insurance plans, track deductibles, and compare out-of-pocket costs. Works fully offline.</p>
-    </div>
-    <div class="card">
-      <h2 class="section">What's next</h2>
-      <div class="future-reel">
-        <div class="future-frame"><span class="ic">&#128279;</span><h4>Insurance EDI integration</h4>
-          <p>Connect directly to insurer EDI feeds for real-time eligibility and benefits data — no more manual entry.</p></div>
-        <div class="future-frame"><span class="ic">&#9989;</span><h4>Instant coverage checks</h4>
-          <p>See exactly what's covered for a specific service before you book it, straight from your payer.</p></div>
-        <div class="future-frame"><span class="ic">&#128179;</span><h4>Pay from your coverage</h4>
-          <p>Use PCET like a card — pay providers directly against your benefits, right from the app.</p></div>
-        <div class="future-frame"><span class="ic">&#128228;</span><h4>Share your records</h4>
-          <p>Securely send your insurance and visit history to a new provider in one tap.</p></div>
-      </div>
-      <div class="future-dots"><span></span><span></span><span></span><span></span></div>
-      <p class="small-note" style="margin-top:12px;">These are planned features and aren't available yet — shown here so you know where PCET is headed.</p>
+      <p class="small-note"><a href="privacy.html" style="color:var(--violet);font-weight:600;">Privacy Policy</a></p>
     </div>
   </div>
 
@@ -434,7 +391,7 @@ function go(name,btn){
   if(name==='log'){
     renderLog();
     var d = document.getElementById('txDate');
-    if(d && !d.value) d.value = new Date().toISOString().slice(0,10);
+    if(d && !d.value) d.value = (function(){ var n=new Date(); return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0'); })();
   }
   window.scrollTo(0,0);
 }
@@ -780,10 +737,21 @@ function saveTx(){
   refreshAll();
 }
 function deleteTx(id){
-  if(!confirm('Delete this entry? This cannot be undone.')) return;
-  var list = txLoad().filter(function(t){ return t.id!==id; });
-  txSave(list);
-  renderLog();
+  var all = txLoad();
+  var tx = all.filter(function(t){ return t.id===id; })[0];
+  if(!tx) return;
+  if(!confirm('Delete this entry? This cannot be undone.'+(tx.planId?' The amount will also be removed from that plan\u2019s deductible and OOP progress.':''))) return;
+  if(!txSave(all.filter(function(t){ return t.id!==id; }))) return;
+  if(tx.planId){
+    var plans = load();
+    var plan = plans.filter(function(p){ return p.id===tx.planId; })[0];
+    if(plan){
+      plan.dedMet = Math.max(0, plan.dedMet - tx.paid);
+      plan.oopMet = Math.max(0, plan.oopMet - tx.paid);
+      saveList(plans);
+    }
+  }
+  refreshAll();
 }
 
 /* ---------- init ---------- */
@@ -799,14 +767,6 @@ renderLog();
     alert('🎉 New year! Insurance deductibles have likely reset. Check the Tracker tab and reset your "Met" amounts if your plan year restarted.');
     lsSet('insWallet_year',String(y));
   }
-})();
-
-/* Open the page requested by a manifest shortcut (?page=compare|track|log|about|wallet) */
-(function(){
-  try{
-    var p = new URLSearchParams(location.search).get('page');
-    if(p && document.getElementById('page-'+p)) go(p);
-  }catch(e){}
 })();
 
 if('serviceWorker' in navigator){
